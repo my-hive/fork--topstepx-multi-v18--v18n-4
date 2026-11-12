@@ -12,7 +12,7 @@ def signals(p):
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
   if s=='ES':
-   c,t=d.close.to_numpy(),d.ct_sec.to_numpy(); date=pd.to_datetime(d.session.astype(str).str[:10]); expiry=(date.dt.weekday==4)&date.dt.day.between(15,21)
+   c,t=d.close.to_numpy(),d.ct_sec.to_numpy(); date=pd.to_datetime(d.session.astype(str).str[:10]); expiry=((date.dt.weekday==4)&date.dt.day.between(15,21)).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
     x=g[t[g]==28800];y=g[t[g]==30600]
     if len(x)and len(y)and expiry[g[0]]:o[g[(t[g]>=30600)&(t[g]<36000)]]=-int(np.sign(c[y[0]]-c[x[0]]))
