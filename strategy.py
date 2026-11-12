@@ -1,30 +1,32 @@
-"""Causal baseline, optional symbols. No requirement to manufacture market diversity.
-Slow 20-bar momentum, entries after 10:00 CT, flat at 14:00. Not claimed profitable.
+"""Rates experiment 1: prior-session ZN trend continuation at US cash open.
+Mechanism: overnight bond repricing persists into scheduled US cash liquidity.
+Falsifier: stressed PnL and cross-era blocks fail to stay positive.
 """
 import numpy as np
 
-FAMILY = "baseline-unvalidated"
-# Baseline deliberately fails risk gate until researcher models real entry risk.
+FAMILY = "rates-prior-session-trend-cash-open"
+PARAMS = {"entry_ct_sec": 30600, "exit_ct_sec": 34200, "risk_dollars": 250}
 
 
 def entry_risk(panel):
-    return {symbol: np.full(len(df), 301.) for symbol, df in panel.items()}
+    return {s: np.full(len(df), PARAMS["risk_dollars"], dtype=float) for s, df in panel.items()}
 
 
 def signals(panel):
     result = {}
     for symbol, df in panel.items():
         out = np.zeros(len(df), dtype=np.int64)
-        # Two micros only, at most 0.2 standard equivalents total.
-        if symbol not in ('MES', 'MGC'):
+        if symbol != "ZN":
             result[symbol] = out
             continue
-        for indices in df.groupby('session', sort=False).indices.values():
-            close = df.close.to_numpy()[indices]
-            sec = df.ct_sec.to_numpy()[indices]
-            # Rolling mean excludes future rows; warmup restarts each session.
-            for j in range(20, len(indices)):
-                if 36000 <= sec[j] < 50400:
-                    out[indices[j]] = int(np.sign(close[j] - close[j-20:j].mean()))
+        groups = list(df.groupby("session", sort=False).indices.values())
+        closes = df.close.to_numpy()
+        sec = df.ct_sec.to_numpy()
+        for g in range(2, len(groups)):
+            prev, prior, idx = groups[g - 1], groups[g - 2], groups[g]
+            side = int(np.sign(closes[prev[-1]] - closes[prior[-1]]))
+            if side:
+                active = idx[(sec[idx] >= PARAMS["entry_ct_sec"]) & (sec[idx] < PARAMS["exit_ct_sec"])]
+                out[active] = side
         result[symbol] = out
     return result
