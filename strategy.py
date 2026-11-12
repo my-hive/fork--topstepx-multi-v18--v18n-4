@@ -1,11 +1,13 @@
-"""Rates experiment 1: prior-session ZN trend continuation at US cash open.
-Mechanism: overnight bond repricing persists into scheduled US cash liquidity.
-Falsifier: stressed PnL and cross-era blocks fail to stay positive.
+"""Rates exp 2: month-end index duration-extension demand, long ZN afternoons.
+Mechanism: bond indices extend duration at month end; passive buying concentrates
+into the last sessions, after cash open. Calendar-only signal (no price lookahead).
+Falsifier: stressed PnL <=0 or any era block <=0 on ZN last-3-business-day longs.
 """
 import numpy as np
+import pandas as pd
 
-FAMILY = "rates-prior-session-trend-cash-open"
-PARAMS = {"entry_ct_sec": 30600, "exit_ct_sec": 34200, "risk_dollars": 250}
+FAMILY = "rates-month-end-duration-extension"
+PARAMS = {"last_n_bdays": 3, "entry_ct_sec": 36000, "risk_dollars": 250}
 
 
 def entry_risk(panel):
@@ -19,14 +21,13 @@ def signals(panel):
         if symbol != "ZN":
             result[symbol] = out
             continue
-        groups = list(df.groupby("session", sort=False).indices.values())
-        closes = df.close.to_numpy()
-        sec = df.ct_sec.to_numpy()
-        for g in range(2, len(groups)):
-            prev, prior, idx = groups[g - 1], groups[g - 2], groups[g]
-            side = int(np.sign(closes[prev[-1]] - closes[prior[-1]]))
-            if side:
-                active = idx[(sec[idx] >= PARAMS["entry_ct_sec"]) & (sec[idx] < PARAMS["exit_ct_sec"])]
-                out[active] = side
+        dates = pd.to_datetime(df.session.astype(str).str[:10])
+        # business days remaining to month end (calendar known in advance)
+        uniq = pd.DataFrame({"d": dates.drop_duplicates()})
+        uniq["left"] = [np.busday_count(d.date(), (d + pd.offsets.BMonthEnd(0)).date()) for d in uniq.d]
+        lm = dict(zip(uniq.d, uniq.left))
+        left = dates.map(lm).to_numpy()
+        on = (left < PARAMS["last_n_bdays"]) & (df.ct_sec.to_numpy() >= PARAMS["entry_ct_sec"])
+        out[on] = 1
         result[symbol] = out
     return result
