@@ -1,20 +1,20 @@
-"""Experiment 181: Nasdaq contract-roll gap continuation.
-Mechanism: institutional roll transfer conveys durable index positioning; when current
-session contract differs from prior completed session, overnight direction continues cash open.
-No signal uses future data. Falsifier PnL/era <=0 or roll artifact detected.
+"""Experiment 183: gold/silver inflation-shock liquidity reversal.
+Mechanism: CPI surprises produce first-wave stop orders in precious metals; gold/silver
+dealer liquidity mean-reverts the initial move. Calendar proxy days 10-16, 08:30 response.
+Falsifier PnL/era <=0 or primary=0.
 """
-import numpy as np
-FAMILY='index-nasdaq-contract-roll-gap-reversal'
-PARAMS={'observe_ct_sec':7200,'entry_ct_sec':30600,'exit_ct_sec':43200,'risk_dollars':250}
+import numpy as np,pandas as pd
+FAMILY='metals-gold-silver-inflation-window-overshoot-reversal'
+PARAMS={'open_ct_sec':30600,'entry_ct_sec':32400,'exit_ct_sec':36000,'risk_dollars':250}
 def entry_risk(p):return{s:np.full(len(d),250.,dtype=float)for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='NQ':
-   c,t,con=d.close.to_numpy(),d.ct_sec.to_numpy(),d.contract.astype(str).to_numpy();gs=list(d.groupby('session',sort=False).indices.values())
-   for k in range(1,len(gs)):
-    g=gs[k];prev=gs[k-1];x=g[t[g]==7200];y=g[t[g]==30600]
-    if len(x)and len(y)and con[g[0]]!=con[prev[-1]]:o[g[(t[g]>=30600)&(t[g]<43200)]]=-int(np.sign(c[y[0]]-c[x[0]]))
+  if s in ('GC','SI'):
+   c,t=d.close.to_numpy(),d.ct_sec.to_numpy();on=pd.to_datetime(d.session.astype(str).str[:10]).dt.day.between(10,16).to_numpy()
+   for g in d.groupby('session',sort=False).indices.values():
+    x=g[t[g]==30600];y=g[t[g]==32400]
+    if len(x)and len(y)and on[g[0]]:o[g[(t[g]>=32400)&(t[g]<36000)]]=-int(np.sign(c[y[0]]-c[x[0]]))
   a[s]=o
  return a
