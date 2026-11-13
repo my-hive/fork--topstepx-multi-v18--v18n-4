@@ -1,22 +1,22 @@
-"""Experiment 303: Month-start micro-gold reserve hedge continuation.
-Mechanism: reserve and ETF allocation sustains opening direction through COMEX liquidity.
+"""Experiment 304: Month-end wheat exporter-hedge reversal.
+Mechanism: exporter hedges overextend opening liquidity before commercial flow.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='metals-microgold-monthstart-reserve-hedge-continuation'
+FAMILY='grains-wheat-monthend-export-hedge-reversal'
 PARAMS={'observe_ct_sec':25200,'entry_ct_sec':30600,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='MGC':
+  if s=='ZW':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10])
-   event=(dt.dt.day<=5).to_numpy()
+   event=dt.dt.day.between(28,31).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
     x=g[t[g]==25200];y=g[t[g]==30600]
     if len(x) and len(y) and event[g[0]]:
-     o[g[(t[g]>=30600)&(t[g]<39600)]]=int(np.sign(c[y[0]]-c[x[0]]))
+     o[g[(t[g]>=30600)&(t[g]<39600)]]=-int(np.sign(c[y[0]]-c[x[0]]))
   a[s]=o
  return a
