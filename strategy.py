@@ -1,23 +1,20 @@
-"""Experiment 202: wheat-corn planting-weather opening confirmation.
-Mechanism: regional weather shock affects grain complex jointly; matching corn/wheat US
-opening moves imply fundamental crop-risk repricing that continues during commercial hedging.
-Falsifier PnL/era <=0.
+"""Experiment 203: S&P month-end closing-auction allocation continuation.
+Mechanism: pension/index fund allocation and benchmark rebalancing concentrates in the
+last session's closing auction; pre-close direction continues through auction execution.
+Known month-end calendar. Falsifier PnL/era <=0.
 """
-import numpy as np
-FAMILY='grains-corn-wheat-weather-opening-confirmation'
-PARAMS={'open_ct_sec':30600,'entry_ct_sec':32400,'exit_ct_sec':39600,'risk_dollars':250}
+import numpy as np,pandas as pd
+FAMILY='index-sp-monthend-closing-auction-allocation-continuation'
+PARAMS={'observe_ct_sec':50400,'entry_ct_sec':52200,'exit_ct_sec':54000,'risk_dollars':250}
 def entry_risk(p):return{s:np.full(len(d),250.,dtype=float)for s,d in p.items()}
 def signals(p):
- a={s:np.zeros(len(d),dtype=np.int64)for s,d in p.items()}
- if not all(s in p for s in ('ZC','ZW')):return a
- q={}
- for s in ('ZC','ZW'):
-  d=p[s];c,t=d.close.to_numpy(),d.ct_sec.to_numpy()
-  for x,g in d.groupby('session',sort=False).indices.items():
-   u=g[t[g]==30600];v=g[t[g]==32400]
-   if len(u)and len(v):q.setdefault(x,{})[s]=int(np.sign(c[v[0]]-c[u[0]]))
- d=p['ZC'];t=d.ct_sec.to_numpy()
- for x,g in d.groupby('session',sort=False).indices.items():
-  z=q.get(x,{})
-  if z.get('ZC',0) and z.get('ZC')==z.get('ZW',0):a['ZC'][g[(t[g]>=32400)&(t[g]<39600)]]=z['ZC']
+ a={}
+ for s,d in p.items():
+  o=np.zeros(len(d),dtype=np.int64)
+  if s=='MES':
+   c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);nextdt=dt+pd.Timedelta(days=1);last=(nextdt.dt.month!=dt.dt.month).to_numpy()
+   for g in d.groupby('session',sort=False).indices.values():
+    x=g[t[g]==50400];y=g[t[g]==52200]
+    if len(x)and len(y)and last[g[0]]:o[g[(t[g]>=52200)&(t[g]<54000)]]=int(np.sign(c[y[0]]-c[x[0]]))
+  a[s]=o
  return a
