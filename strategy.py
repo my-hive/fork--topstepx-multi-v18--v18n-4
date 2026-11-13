@@ -4,7 +4,7 @@ alignment; first move may overextend before Canadian exporter hedge liquidity no
 Fade 6C when CL confirms 08:30-09:00 move. Falsifier PnL/era<=0.
 """
 import numpy as np,pandas as pd
-FAMILY='fx-cad-crude-inventory-confirmed-reversal'
+FAMILY='fx-cad-crude-inventory-confirmed-continuation'
 PARAMS={'open_ct_sec':30600,'entry_ct_sec':32400,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p):return{s:np.full(len(d),250.,dtype=float)for s,d in p.items()}
 def signals(p):
@@ -19,5 +19,5 @@ def signals(p):
  d=p['6C'];t=d.ct_sec.to_numpy();wd=pd.to_datetime(d.session.astype(str).str[:10]).dt.weekday.to_numpy()
  for x,g in d.groupby('session',sort=False).indices.items():
   z=q.get(x,{})
-  if wd[g[0]]==2 and z.get('CL',0)==z.get('6C',0) and z.get('6C',0):a['6C'][g[(t[g]>=32400)&(t[g]<39600)]]=-z['6C']
+  if wd[g[0]]==2 and z.get('CL',0)==z.get('6C',0) and z.get('6C',0):a['6C'][g[(t[g]>=32400)&(t[g]<39600)]]=z['6C']
  return a
