@@ -1,20 +1,23 @@
-"""Experiment 236: gasoline inventory low-volatility breakout.
-Mechanism: a quiet pre-release RB market stores inventory uncertainty; weekly inventory
-report resolves it and initial repricing persists. Causal 20-session pre-open range norm.
-Falsifier PnL/era<=0.
+"""Experiment 238: independent equity-Friday and gold-Tuesday portfolio.
+Mechanism: Friday ETF basket execution in MES and Tuesday bullion safe-haven liquidity
+reversal in MGC occur on distinct days and assets, potentially diversify combine paths.
+Falsifier: primary zero, era loss, risk breach, or inadequate years.
 """
 import numpy as np,pandas as pd
-FAMILY='energy-gasoline-inventory-lowvolatility-breakout'
-PARAMS={'range_start_ct_sec':25200,'open_ct_sec':30600,'entry_ct_sec':32400,'exit_ct_sec':39600,'lookback_sessions':20,'risk_dollars':250}
+FAMILY='crossasset-friday-equity-plus-tuesday-gold-portfolio'
+PARAMS={'open_ct_sec':30600,'entry_ct_sec':32400,'exit_ct_sec':50400,'risk_dollars':250}
 def entry_risk(p):return{s:np.full(len(d),250.,dtype=float)for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
-  o=np.zeros(len(d),dtype=np.int64)
-  if s=='RB':
-   c,h,l,t=d.close.to_numpy(),d.high.to_numpy(),d.low.to_numpy(),d.ct_sec.to_numpy();gs=list(d.groupby('session',sort=False).indices.values());dt=pd.to_datetime(d.session.iloc[[g[0] for g in gs]].astype(str).str[:10]);r=[]
-   for k,g in enumerate(gs):
-    q=g[(t[g]>=25200)&(t[g]<30600)];v=h[q].max()-l[q].min() if len(q)else 0.;r.append(v);x=g[t[g]==30600];y=g[t[g]==32400]
-    if k>=20 and len(x)and len(y)and dt.iloc[k].weekday()==2 and v<np.median(r[k-20:k]):o[g[(t[g]>=32400)&(t[g]<39600)]]=int(np.sign(c[y[0]]-c[x[0]]))
+  o=np.zeros(len(d),dtype=np.int64);c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);wd=dt.dt.weekday.to_numpy()
+  if s=='MES':
+   for g in d.groupby('session',sort=False).indices.values():
+    x=g[t[g]==30600];y=g[t[g]==32400]
+    if len(x)and len(y) and wd[g[0]]==4:o[g[(t[g]>=32400)&(t[g]<50400)]]=int(np.sign(c[y[0]]-c[x[0]]))
+  if s=='MGC':
+   for g in d.groupby('session',sort=False).indices.values():
+    x=g[t[g]==25200];y=g[t[g]==30600]
+    if len(x)and len(y) and wd[g[0]]==1:o[g[(t[g]>=30600)&(t[g]<39600)]]=-int(np.sign(c[y[0]]-c[x[0]]))
   a[s]=o
  return a
