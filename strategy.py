@@ -1,17 +1,17 @@
-"""Experiment 326: Month-end gasoline refinery-hedge reversal.
+"""Experiment 327: Month-end heating-oil refinery-hedge reversal.
 Mechanism: refinery/distributor hedges overextend opening move before commercial flow.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='energy-gasoline-monthend-refinery-hedge-reversal'
+FAMILY='energy-heatingoil-monthend-refinery-hedge-reversal'
 PARAMS={'observe_ct_sec':25200,'entry_ct_sec':30600,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='RB':
+  if s=='HO':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);event=dt.dt.day.between(28,31).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
     x=g[t[g]==25200];y=g[t[g]==30600]
