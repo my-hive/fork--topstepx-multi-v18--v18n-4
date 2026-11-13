@@ -1,22 +1,22 @@
-"""Experiment 320: Quarterly expiry Bitcoin close reversal.
-Mechanism: crypto option hedges overextend late CME Bitcoin flow before close.
+"""Experiment 321: Payroll micro-gold real-rate reversal.
+Mechanism: payroll rate shock overextends gold hedge flow before liquidity normalizes.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='crypto-bitcoin-quarterly-expiry-close-reversal'
-PARAMS={'observe_ct_sec':50400,'entry_ct_sec':52200,'exit_ct_sec':54000,'risk_dollars':250}
+FAMILY='metals-microgold-payroll-realrate-reversal'
+PARAMS={'observe_ct_sec':28800,'entry_ct_sec':30600,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='MBT':
+  if s=='MGC':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);wd=dt.dt.weekday.to_numpy()
-   event=(dt.dt.month.isin([3,6,9,12])&dt.dt.day.between(15,21)&(wd==4)).to_numpy()
+   event=((wd==4)&dt.dt.day.between(1,7)).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
-    x=g[t[g]==50400];y=g[t[g]==52200]
+    x=g[t[g]==28800];y=g[t[g]==30600]
     if len(x) and len(y) and event[g[0]]:
-     o[g[(t[g]>=52200)&(t[g]<54000)]]=-int(np.sign(c[y[0]]-c[x[0]]))
+     o[g[(t[g]>=30600)&(t[g]<39600)]]=-int(np.sign(c[y[0]]-c[x[0]]))
   a[s]=o
  return a
