@@ -1,17 +1,17 @@
-"""Experiment 335: Quarterly refunding micro-euro continuation.
-Mechanism: refunding guidance shifts US-rate differential and EUR hedge execution.
+"""Experiment 336: Quarterly refunding Russell funding continuation.
+Mechanism: refunding guidance changes small-cap funding hedge execution.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='fx-euro-refunding-ratepath-continuation'
+FAMILY='index-russell-refunding-smallcap-funding-continuation'
 PARAMS={'observe_ct_sec':30600,'entry_ct_sec':32400,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='M6E':
+  if s=='M2K':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);wd=dt.dt.weekday.to_numpy()
    event=(dt.dt.month.isin([2,5,8,11])&dt.dt.day.between(1,7)&(wd==2)).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
