@@ -1,17 +1,17 @@
-"""Experiment 301: Month-start micro-crude index-rebalance continuation.
-Mechanism: index and producer hedges sustain opening direction as liquidity arrives.
+"""Experiment 302: Month-start micro-copper industrial hedge continuation.
+Mechanism: procurement and FX hedges sustain opening direction through COMEX liquidity.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='energy-microcrude-monthstart-index-rebalance-continuation'
+FAMILY='metals-microcopper-monthstart-industrial-hedge-continuation'
 PARAMS={'observe_ct_sec':25200,'entry_ct_sec':30600,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='MCL':
+  if s=='MHG':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10])
    event=(dt.dt.day<=5).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
