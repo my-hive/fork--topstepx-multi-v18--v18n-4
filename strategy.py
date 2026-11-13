@@ -1,10 +1,10 @@
-"""Experiment 300: Month-end micro-crude roll-hedge reversal.
-Mechanism: producer/index roll hedges overextend opening move before liquidity.
+"""Experiment 301: Month-start micro-crude index-rebalance continuation.
+Mechanism: index and producer hedges sustain opening direction as liquidity arrives.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='energy-microcrude-monthend-roll-hedge-reversal'
+FAMILY='energy-microcrude-monthstart-index-rebalance-continuation'
 PARAMS={'observe_ct_sec':25200,'entry_ct_sec':30600,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
@@ -13,10 +13,10 @@ def signals(p):
   o=np.zeros(len(d),dtype=np.int64)
   if s=='MCL':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10])
-   event=dt.dt.day.between(28,31).to_numpy()
+   event=(dt.dt.day<=5).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
     x=g[t[g]==25200];y=g[t[g]==30600]
     if len(x) and len(y) and event[g[0]]:
-     o[g[(t[g]>=30600)&(t[g]<39600)]]=-int(np.sign(c[y[0]]-c[x[0]]))
+     o[g[(t[g]>=30600)&(t[g]<39600)]]=int(np.sign(c[y[0]]-c[x[0]]))
   a[s]=o
  return a
