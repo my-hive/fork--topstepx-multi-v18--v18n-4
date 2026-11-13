@@ -1,20 +1,24 @@
-"""Experiment 244: S&P FOMC post-statement liquidity reversal.
-Mechanism: first ten minutes after policy statement can be stop-driven; dealer liquidity
-and portfolio rebalancing reverse excessive initial equity-duration response into close.
-Falsifier: stressed PnL <=0 or any era <=0.
+"""Experiment 245: independent FOMC and Friday equity execution portfolio.
+Mechanism: FOMC post-statement S&P duration hedging and Friday MNQ ETF basket execution
+occur on different days and reflect distinct institutional catalysts. Combine without
+changing component rules to seek more combine windows. Falsifier primary zero/era/risk.
 """
 import numpy as np,pandas as pd
-FAMILY='index-sp-fomc-poststatement-liquidity-reversal'
-PARAMS={'observe_ct_sec':50400,'entry_ct_sec':51000,'exit_ct_sec':54000,'risk_dollars':250}
+FAMILY='index-fomc-sp-plus-friday-nasdaq-execution-portfolio'
+PARAMS={'fomc_observe_ct_sec':50400,'fomc_entry_ct_sec':51000,'friday_open_ct_sec':30600,'friday_entry_ct_sec':32400,'risk_dollars':250}
 def entry_risk(p):return{s:np.full(len(d),250.,dtype=float)for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
-  o=np.zeros(len(d),dtype=np.int64)
+  o=np.zeros(len(d),dtype=np.int64);c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);wd=dt.dt.weekday.to_numpy()
   if s=='MES':
-   c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);on=(dt.dt.month.isin([3,6,9,12])&(dt.dt.weekday==2)&dt.dt.day.between(15,21)).to_numpy()
+   on=(dt.dt.month.isin([3,6,9,12])&(wd==2)&dt.dt.day.between(15,21)).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
     x=g[t[g]==50400];y=g[t[g]==51000]
-    if len(x)and len(y)and on[g[0]]:o[g[(t[g]>=51000)&(t[g]<54000)]]=-int(np.sign(c[y[0]]-c[x[0]]))
+    if len(x)and len(y)and on[g[0]]:o[g[(t[g]>=51000)&(t[g]<54000)]]=int(np.sign(c[y[0]]-c[x[0]]))
+  if s=='MNQ':
+   for g in d.groupby('session',sort=False).indices.values():
+    x=g[t[g]==30600];y=g[t[g]==32400]
+    if len(x)and len(y)and wd[g[0]]==4:o[g[(t[g]>=32400)&(t[g]<50400)]]=int(np.sign(c[y[0]]-c[x[0]]))
   a[s]=o
  return a
