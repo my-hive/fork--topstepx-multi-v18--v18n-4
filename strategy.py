@@ -1,16 +1,16 @@
-"""Experiment 217: gold Tuesday US-session safe-haven reversal.
+"""Experiment 217: silver Tuesday US-session safe-haven reversal.
 Mechanism: Monday positioning and early Tuesday safe-haven flow can exhaust before US
-cash bullion liquidity; fade pre-US gold move during morning. Falsifier PnL/era <=0.
+cash bullion liquidity; fade pre-US silver move during morning. Falsifier PnL/era <=0.
 """
 import numpy as np,pandas as pd
-FAMILY='metals-gold-tuesday-us-safehaven-reversal'
+FAMILY='metals-silver-tuesday-us-safehaven-reversal'
 PARAMS={'observe_ct_sec':25200,'entry_ct_sec':30600,'exit_ct_sec':39600,'risk_dollars':250}
 def entry_risk(p):return{s:np.full(len(d),250.,dtype=float)for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='GC':
+  if s=='SI':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();wd=pd.to_datetime(d.session.astype(str).str[:10]).dt.weekday.to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
     x=g[t[g]==25200];y=g[t[g]==30600]
