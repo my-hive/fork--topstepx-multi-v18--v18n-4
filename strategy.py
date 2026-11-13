@@ -1,17 +1,17 @@
-"""Experiment 384: FOMC silver real-yield continuation.
-Mechanism: policy shock drives precious-metal real-yield hedging after statement.
+"""Experiment 385: FOMC five-year duration continuation.
+Mechanism: policy shock drives belly duration hedging after statement.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='metals-silver-fomc-realyield-continuation'
+FAMILY='rates-fiveyear-fomc-policy-continuation'
 PARAMS={'observe_ct_sec':50400,'entry_ct_sec':51000,'exit_ct_sec':54000,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='SI':
+  if s=='ZF':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10]);wd=dt.dt.weekday.to_numpy();event=(dt.dt.month.isin([3,6,9,12])&dt.dt.day.between(15,21)&(wd==2)).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
     x=g[t[g]==50400];y=g[t[g]==51000]
