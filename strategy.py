@@ -1,17 +1,17 @@
-"""Experiment 307: Month-end EUR fixing-liquidity reversal.
-Mechanism: corporate fixing hedges overextend early London liquidity.
+"""Experiment 308: Month-end JPY fixing-liquidity reversal.
+Mechanism: corporate fixing hedges overextend JPY liquidity before normal flow.
 Falsifier: primary zero, any era loss, risk breach, or inadequate years.
 """
 import numpy as np
 import pandas as pd
-FAMILY='fx-euro-monthend-fixing-liquidity-reversal'
+FAMILY='fx-yen-monthend-fixing-liquidity-reversal'
 PARAMS={'observe_ct_sec':7200,'entry_ct_sec':9000,'exit_ct_sec':18000,'risk_dollars':250}
 def entry_risk(p): return {s:np.full(len(d),250.,dtype=float) for s,d in p.items()}
 def signals(p):
  a={}
  for s,d in p.items():
   o=np.zeros(len(d),dtype=np.int64)
-  if s=='6E':
+  if s=='6J':
    c,t=d.close.to_numpy(),d.ct_sec.to_numpy();dt=pd.to_datetime(d.session.astype(str).str[:10])
    event=dt.dt.day.between(28,31).to_numpy()
    for g in d.groupby('session',sort=False).indices.values():
